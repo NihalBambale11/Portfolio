@@ -1,0 +1,81 @@
+#root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #0b0c10; /* Dark gaming/cyber slate */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* 1. PROJECT CARD HOVER ANIMATION */
+.project-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.project-card:hover {
+  transform: translateY(-6px);
+  background: rgba(0, 255, 204, 0.08) !important;
+  border-color: #00ffcc !important;
+  box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2);
+}
+
+/* 2. SKILL NODE HOVER ANIMATION */
+.skill-node {
+  transition: all 0.2s ease-in-out;
+}
+.skill-node:hover {
+  transform: translateX(10px);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 3. 3D FLOATING TAGS PULSE & HOVER */
+.tag-3d {
+  transition: all 0.2s ease;
+  animation: pulse-glow 3s infinite alternate;
+}
+.tag-3d:hover {
+  transform: scale(1.08);
+  background: rgba(0, 255, 204, 0.2) !important;
+  box-shadow: 0 0 25px rgba(0, 255, 204, 0.8) !important;
+  color: #fff !important;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 10px rgba(0, 255, 204, 0.3); }
+  100% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.6); }
+}
+
+/* 4. TACTICAL CRT SCANLINE OVERLAY */
+.scanlines {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+  background-size: 100% 4px;
+  z-index: 100;
+  pointer-events: none; /* Lets you click right through it */
+  opacity: 0.4;
+}
+
+/* 5. QUICK LINKS HUD HOVER */
+.quick-link {
+  display: block;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+}
+.quick-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateX(-4px);
+  box-shadow: -4px 0 10px rgba(255, 255, 255, 0.1);
+}
