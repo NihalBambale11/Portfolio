@@ -1,16 +1,13 @@
-import React, { Suspense, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment, Html ,Sparkles } from '@react-three/drei'
+import React, { Suspense, useState, useEffect } from 'react'
+import { Canvas , useFrame } from '@react-three/fiber'
+import { OrbitControls, Environment, Html, Sparkles, useProgress } from '@react-three/drei'
+import * as THREE from 'three'
 import { Model } from './Setup'
 import './App.css'
 
-
 // ==========================================
-// SECTION 1: DATA MODELS
+// 1. DATA MODELS
 // ==========================================
-
-// 1A. ALL PROJECTS
-// Add any future projects to this array and the UI will automatically generate the cards.
 const PROJECTS = [
   {
     id: 'v4l2-zerocopy',
@@ -54,8 +51,6 @@ const PROJECTS = [
   }
 ]
 
-// 1B. SKILL TREE & LOADOUT DATA
-// Categorized technical skills for the interactive gaming menu.
 const SKILL_TREES = {
   systems: {
     name: 'CORE SYSTEMS // C++ & EMBEDDED LINUX',
@@ -108,19 +103,140 @@ const SKILL_TREES = {
 }
 
 // ==========================================
-// SECTION 2: MAIN APP COMPONENT
+// 2. BOOT SEQUENCE COMPONENT
+// ==========================================
+function BootSequence() {
+  const { progress } = useProgress()
+  const [isVisible, setIsVisible] = useState(true)
+  const [forcedWait, setForcedWait] = useState(true)
+
+  // Force the cinematic terminal to stay for at least 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setForcedWait(false), 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Fade out only when BOTH the model is loaded AND the forced wait is over
+  useEffect(() => {
+    if (progress === 100 && !forcedWait) {
+      const fadeTimer = setTimeout(() => setIsVisible(false), 800)
+      return () => clearTimeout(fadeTimer)
+    }
+  }, [progress, forcedWait])
+
+  if (!isVisible) return null
+
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, width: '100vw', height: '100vh',
+      backgroundColor: '#0b0c10', zIndex: 99999, display: 'flex', 
+      flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+      color: '#00ffcc', fontFamily: 'monospace',
+      opacity: (progress === 100 && !forcedWait) ? 0 : 1, 
+      transition: 'opacity 0.8s ease-out', pointerEvents: 'none'
+    }}>
+      <div style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+        <h2 style={{ color: '#ff3366', margin: '0 0 20px 0', letterSpacing: '2px', fontSize: '1.4rem' }}>
+          [ NIHAL_OS : v2.4 ]
+        </h2>
+        <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>&gt; SYSTEM_BOOT_SEQUENCE_INITIATED...</p>
+        <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>&gt; LOADING V4L2 DRIVERS... [ OK ]</p>
+        <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>&gt; ESTABLISHING SECURE UPLINK... [ OK ]</p>
+        <p style={{ margin: '8px 0', color: '#ffcc00', fontSize: '0.9rem' }}>
+          &gt; MOUNTING 3D ENGINE... {Math.round(progress)}%
+        </p>
+        
+        {/* Loading Bar */}
+        <div style={{ width: '100%', height: '18px', border: '2px solid #00ffcc', marginTop: '25px', padding: '2px', boxSizing: 'border-box' }}>
+          <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#00ffcc', transition: 'width 0.2s ease' }} />
+        </div>
+        
+        {/* Success Message */}
+        {progress === 100 && !forcedWait && (
+          <p style={{ margin: '25px 0', color: '#00ffcc', fontWeight: 'bold', textShadow: '0 0 10px #00ffcc' }}>
+            &gt; ACCESS GRANTED. ENTERING THE GRID...
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ==========================================
+// CINEMATIC CAMERA CONTROLLER
+// ==========================================
+function CameraController({ activeModal }) {
+  useFrame((state, delta) => {
+    // Default position (sitting at the desk)
+    const targetPos = new THREE.Vector3(-0.4, 1.4, 4.2)
+
+    if (activeModal === 'projects') {
+      // Fly left, zoom in on the Monitor
+      targetPos.set(-1.2, 1.5, 2.0)
+    } else if (activeModal === 'skills') {
+      // Fly right, zoom in on the glowing PC Tower
+      targetPos.set(1.2, 1.3, 2.2)
+    } else if (activeModal === 'dossier') {
+      // Fly up, look down at the Keyboard/Mouse
+      targetPos.set(-0.2, 2.2, 1.5)
+    }
+
+    // Smoothly glide the camera to the target position
+    state.camera.position.lerp(targetPos, delta * 3.5)
+  })
+  return null
+}
+
+// ==========================================
+// 3. MAIN APP COMPONENT
 // ==========================================
 export default function App() {
-  // State for controlling which modal is open ('projects', 'skills', 'dossier', or null)
   const [activeModal, setActiveModal] = useState(null)
-  
-  // State for the Skill Tree interactions
   const [activeBranch, setActiveBranch] = useState('systems')
   const [selectedSkill, setSelectedSkill] = useState(SKILL_TREES.systems.nodes[0])
 
+  const [githubStats, setGithubStats] = useState({ repos: 0, followers: 0, status: 'FETCHING_DATA...' })
+// NEW: Fetch live data from GitHub API on load
+  useEffect(() => {
+    fetch('https://api.github.com/users/NihalBambale11')
+      .then(res => res.json())
+      .then(data => {
+        setGithubStats({ 
+          repos: data.public_repos, 
+          followers: data.followers, 
+          status: 'CONNECTION_STABLE' 
+        })
+      })
+      .catch(() => setGithubStats({ ...githubStats, status: 'UPLINK_FAILED' }))
+  }, [])
+
+  // NEW: Secret Konami Code Easter Egg (Matrix Mode)
+  useEffect(() => {
+    const secretCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'b', 'a']
+    let keyHistory = []
+
+    const handleKeyDown = (e) => {
+      keyHistory.push(e.key)
+      keyHistory = keyHistory.slice(-8) // keep only the last 8 keys pressed
+
+      // If the last 8 keys match the Konami Code
+      if (JSON.stringify(keyHistory) === JSON.stringify(secretCode)) {
+        // Apply a CSS global filter to shift colors to Matrix Green
+        document.body.style.filter = 'hue-rotate(90deg) saturate(1.5)'
+        alert('[ SYSTEM OVERRIDE ] MATRIX MODE ENGAGED. WELCOME, ADMIN.')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const currentTree = SKILL_TREES[activeBranch]
 
-  // Helper function to switch skill categories and reset the selected skill
+  // Audio players (the .catch prevents browser auto-play block errors)
+  const playHover = () => new Audio('/hover.mp3').play().catch(() => {})
+  const playClick = () => new Audio('/click.mp3').play().catch(() => {})
+
   const handleBranchSwitch = (branchKey) => {
     setActiveBranch(branchKey)
     setSelectedSkill(SKILL_TREES[branchKey].nodes[0])
@@ -129,15 +245,13 @@ export default function App() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', fontFamily: 'monospace' }}>
       
-      {/* HUD CRT Overlay */}
+      {/* BOOT OVERLAY RENDERED HERE */}
+      <BootSequence />
+
       <div className="scanlines"></div>
 
-      {/* ==========================================
-          SECTION 3: 2D HTML OVERLAYS (HUD & MODALS)
-          ========================================== */}
-      
-      {/* 3A. TOP-LEFT COMPACT PLAYER HUD */}
-      <div style={{
+      {/* TOP-LEFT COMPACT PLAYER HUD */}
+      <div className="hud-left" style={{
         position: 'absolute', top: '20px', left: '20px', zIndex: 10,
         maxWidth: '360px', padding: '1.2rem 1.4rem',
         background: 'rgba(11, 12, 16, 0.82)', backdropFilter: 'blur(8px)',
@@ -154,35 +268,51 @@ export default function App() {
         <h2 style={{ margin: '4px 0 8px 0', fontSize: '0.88rem', color: '#e0e0e0', fontWeight: 'normal' }}>
           Software Engineer | Multimedia &amp; Embedded Systems
         </h2>
-        <p style={{ margin: 0, lineHeight: '1.45', fontSize: '0.78rem', color: '#aaa' }}>
+        <p className="bio-text" style={{ margin: 0, lineHeight: '1.45', fontSize: '0.78rem', color: '#aaa' }}>
           Engineering real-time A/V streaming pipelines, V4L2 zero-copy memory architectures, and Qt/QML applications on custom SoC &amp; Linux platforms.
         </p>
-        <div style={{ marginTop: '10px', fontSize: '0.7rem', color: '#00ffcc' }}>
-          ▶ Click the glowing nodes on the 3D rig to explore
-        </div>
       </div>
 
-
-
-      {/* 3A-2. TOP-RIGHT SYSTEM TERMINAL & QUICK LINKS */}
-      <div style={{
+      {/* RIGHT/BOTTOM SYSTEM TERMINAL & QUICK LINKS */}
+      <div className="hud-right" style={{
         position: 'absolute', top: '20px', right: '20px', zIndex: 10,
         width: '260px', padding: '1rem',
         background: 'rgba(11, 12, 16, 0.82)', backdropFilter: 'blur(8px)',
         borderRight: '3px solid #ffcc00', borderTop: '1px solid rgba(255, 204, 0, 0.25)',
         borderLeft: '1px solid rgba(255, 204, 0, 0.25)', borderBottom: '1px solid rgba(255, 204, 0, 0.25)',
-        borderRadius: '6px', color: 'white', pointerEvents: 'auto' // auto allows clicking links
+        borderRadius: '6px', color: 'white', pointerEvents: 'auto'
       }}>
         <div style={{ fontSize: '0.7rem', color: '#ffcc00', marginBottom: '12px', letterSpacing: '1px' }}>
           [ SYSTEM UPLINK : ONLINE ]
         </div>
+
+        {/* MOBILE NAVIGATION MENU (Hidden on large screens) */}
+    <div className="mobile-nav-menu">
+          <button className="mobile-nav-btn" 
+                  onMouseEnter={playHover} 
+                  onClick={() => { playClick(); setActiveModal('projects') }} 
+                  style={{ border: '1px solid #00ffcc', color: '#00ffcc' }}>
+            [ VIEW PROJECTS ]
+          </button>
+          <button className="mobile-nav-btn" 
+                  onMouseEnter={playHover} 
+                  onClick={() => { playClick(); setActiveModal('skills') }} 
+                  style={{ border: '1px solid #ff3366', color: '#ff3366' }}>
+            [ SKILL TREE ]
+          </button>
+          <button className="mobile-nav-btn" 
+                  onMouseEnter={playHover} 
+                  onClick={() => { playClick(); setActiveModal('dossier') }} 
+                  style={{ border: '1px solid #ffcc00', color: '#ffcc00' }}>
+            [ QUEST LOG ]
+          </button>
+        </div>
         
-        {/* Quick Action Links */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <a href="https://github.com/NihalBambale11/" target="_blank" rel="noreferrer" className="quick-link" style={{ color: '#fff' }}>
+        <div className="quick-links-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <a href="https://github.com/NihalBambale11" target="_blank" rel="noreferrer" className="quick-link" style={{ color: '#fff' }}>
             &gt; GITHUB_ARCHIVE
           </a>
-          <a href="https://www.linkedin.com/in/nihal-bambale-052ab4164/" target="_blank" rel="noreferrer" className="quick-link" style={{ color: '#00ccff' }}>
+          <a href="https://linkedin.com/in/YOUR_LINKEDIN" target="_blank" rel="noreferrer" className="quick-link" style={{ color: '#00ccff' }}>
             &gt; LINKEDIN_NETWORK
           </a>
           <a href="/Nihal_Bambale.pdf" download="Nihal_Bambale_Resume.pdf" className="quick-link" style={{ color: '#ff3366' }}>
@@ -190,18 +320,17 @@ export default function App() {
           </a>
         </div>
 
-        {/* Fake Boot Sequence Logging */}
-        <div style={{ marginTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '10px', fontSize: '0.65rem', color: '#555', lineHeight: '1.6' }}>
-          &gt; V4L2_INIT_SUCCESS<br/>
-          &gt; RTP_STREAM_ACTIVE<br/>
-          &gt; MEMORY_ZERO_COPY: TRUE<br/>
+<div className="boot-text" style={{ marginTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '10px', fontSize: '0.65rem', color: '#555', lineHeight: '1.6' }}>
+          &gt; GITHUB_API_UPLINK: <span style={{ color: githubStats.status === 'CONNECTION_STABLE' ? '#00ffcc' : '#ffcc00' }}>[{githubStats.status}]</span><br/>
+          &gt; PUBLIC_ARCHIVES: <span style={{ color: '#fff' }}>{githubStats.repos} REPOSITORIES</span><br/>
+          &gt; NETWORK_NODES: <span style={{ color: '#fff' }}>{githubStats.followers} CONNECTIONS</span><br/>
           &gt; AWAITING_COMMAND...
         </div>
       </div>
 
-      {/* 3B. MODAL 1: PROJECT ARCHIVES */}
+      {/* MODALS */}
       {activeModal === 'projects' && (
-        <div style={modalContainerStyle('#00ffcc')}>
+        <div className="modal-container" style={modalContainerStyle('#00ffcc')}>
           <div style={modalHeaderStyle}>
             <div>
               <h2 style={{ margin: 0, color: '#00ffcc', letterSpacing: '2px', fontSize: '1.4rem' }}>// DEPLOYED SYSTEMS &amp; PROJECTS</h2>
@@ -210,7 +339,7 @@ export default function App() {
             <button onClick={() => setActiveModal(null)} style={closeButtonStyle}>[ ESC / CLOSE ]</button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem', marginTop: '1.5rem' }}>
+          <div className="projects-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem', marginTop: '1.5rem' }}>
             {PROJECTS.map((proj) => (
               <div key={proj.id} className="project-card" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(0, 255, 204, 0.25)', borderRadius: '6px', padding: '1.2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
@@ -234,9 +363,8 @@ export default function App() {
         </div>
       )}
 
-      {/* 3C. MODAL 2: SKILL TREE & TECH LOADOUT */}
       {activeModal === 'skills' && (
-        <div style={modalContainerStyle(currentTree.color)}>
+        <div className="modal-container" style={modalContainerStyle(currentTree.color)}>
           <div style={modalHeaderStyle}>
             <div>
               <h2 style={{ margin: 0, color: currentTree.color, letterSpacing: '2px', fontSize: '1.4rem' }}>
@@ -271,7 +399,7 @@ export default function App() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '1.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
+          <div className="skills-grid" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '1.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {currentTree.nodes.map((node, i) => {
                 const isSelected = selectedSkill.id === node.id
@@ -313,9 +441,8 @@ export default function App() {
         </div>
       )}
 
-      {/* 3D. MODAL 3: QUEST LOG, CONTACT & TRANSMISSION COMMS */}
       {activeModal === 'dossier' && (
-        <div style={modalContainerStyle('#ffcc00')}>
+        <div className="modal-container" style={modalContainerStyle('#ffcc00')}>
           <div style={modalHeaderStyle}>
             <div>
               <h2 style={{ margin: 0, color: '#ffcc00', letterSpacing: '2px', fontSize: '1.4rem' }}>// QUEST LOG &amp; COMMS TERMINAL</h2>
@@ -324,9 +451,8 @@ export default function App() {
             <button onClick={() => setActiveModal(null)} style={closeButtonStyle}>[ ESC / CLOSE ]</button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '2rem', marginTop: '1.5rem' }}>
+          <div className="dossier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '2rem', marginTop: '1.5rem' }}>
             
-            {/* Left Column: Experience & Education */}
             <div>
               <h3 style={{ color: '#ffcc00', borderBottom: '1px solid #333', paddingBottom: '6px' }}>◆ ACTIVE QUEST (EXPERIENCE)</h3>
               <h4 style={{ margin: '0.5rem 0 0.2rem 0', color: '#fff' }}>Software Engineer 1 | Mirafra Technologies</h4>
@@ -348,15 +474,13 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right Column: Visitor Transmission Form & Resume Download */}
             <div style={{ background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 204, 0, 0.3)', borderRadius: '8px', padding: '1.4rem' }}>
               <h3 style={{ color: '#ffcc00', margin: '0 0 0.4rem 0', fontSize: '1.1rem' }}>◆ TRANSMIT COMMS TO NIHAL</h3>
               <p style={{ fontSize: '0.78rem', color: '#aaa', marginBottom: '1.2rem' }}>
                 Drop your details and message. This will instantly notify my inbox so I know you visited!
               </p>
 
-              {/* FORMSPREE INTEGRATION: Replace the URL below with your actual Formspree endpoint */}
-              <form action="https://formspree.io/f/mvkzdzoe" method="POST">
+              <form action="https://formspree.io/f/YOUR_ENDPOINT_HERE" method="POST">
                 <div style={{ marginBottom: '0.9rem' }}>
                   <label style={{ display: 'block', fontSize: '0.75rem', color: '#ffcc00', marginBottom: '4px' }}>YOUR NAME / CALLSIGN</label>
                   <input type="text" name="name" required placeholder="e.g. Alex (Recruiter)" style={inputStyle} />
@@ -377,7 +501,6 @@ export default function App() {
                 </button>
               </form>
 
-              {/* Direct Email and Resume Download */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', borderTop: '1px solid #333', paddingTop: '1rem' }}>
                 <div style={{ fontSize: '0.75rem', color: '#888' }}>
                   Direct: <a href="mailto:nihalbambale2000@gmail.com" style={{ color: '#00ffcc', textDecoration: 'none' }}>nihalbambale2000@gmail.com</a>
@@ -396,40 +519,45 @@ export default function App() {
         </div>
       )}
 
-      {/* ==========================================
-          SECTION 4: 3D CANVAS BACKGROUND
-          ========================================== */}
+      {/* 3D CANVAS BACKGROUND */}
       <Canvas camera={{ position: [-0.4, 1.4, 4.2], fov: 58 }}>
         <Environment preset="city" />
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1.5} />
-{/* Layer 1: Dense, smaller teal particles */}
-        <Sparkles count={350} scale={12} size={1.2} speed={0.4} opacity={0.25} color="#00ffcc" />
         
-        {/* Layer 2: Sparse, slightly larger pink particles for depth */}
-        <Sparkles count={80} scale={10} size={2} speed={0.2} opacity={0.15} color="#ff3366" />        
-        {/* The 3D Setup Model Wrapper */}
-      <group position={[0.55, -1, 0]} rotation={[0, -0.4, 0]}>
+        <Sparkles count={350} scale={12} size={1.2} speed={0.4} opacity={0.25} color="#00ffcc" />
+        <Sparkles count={80} scale={10} size={2} speed={0.2} opacity={0.15} color="#ff3366" />
+        
+        <group position={[0.55, -1, 0]} rotation={[0, -0.4, 0]}>
           <Suspense fallback={null}>
+            <CameraController activeModal={activeModal} />
             <Model scale={0.9} />
 
-            {/* Tags are now inside Suspense so they load smoothly with the model */}
             {!activeModal && (
               <>
-                <Html position={[-1.4, 2.3, 0.1]} center distanceFactor={5}>
-                  <div className="tag-3d" onClick={() => setActiveModal('projects')} style={tag3DStyle('#00ffcc')}>
+<Html position={[-1.4, 2.3, 0.1]} center distanceFactor={5}>
+                  <div className="tag-3d desktop-3d-tag" 
+                       onPointerEnter={playHover} 
+                       onClick={() => { playClick(); setActiveModal('projects') }} 
+                       style={tag3DStyle('#00ffcc')}>
                     [ VIEW PROJECTS ]
                   </div>
                 </Html>
 
                 <Html position={[0.45, 2.3, -0.1]} center distanceFactor={5}>
-                  <div className="tag-3d" onClick={() => setActiveModal('skills')} style={tag3DStyle('#ff3366')}>
+                  <div className="tag-3d desktop-3d-tag" 
+                       onPointerEnter={playHover} 
+                       onClick={() => { playClick(); setActiveModal('skills') }} 
+                       style={tag3DStyle('#ff3366')}>
                     [ SKILL TREE ]
                   </div>
                 </Html>
 
                 <Html position={[-0.6, 1.15, 0.7]} center distanceFactor={5}>
-                  <div className="tag-3d" onClick={() => setActiveModal('dossier')} style={tag3DStyle('#ffcc00')}>
+                  <div className="tag-3d desktop-3d-tag" 
+                       onPointerEnter={playHover} 
+                       onClick={() => { playClick(); setActiveModal('dossier') }} 
+                       style={tag3DStyle('#ffcc00')}>
                     [ QUEST LOG &amp; CONTACT ]
                   </div>
                 </Html>
@@ -438,17 +566,19 @@ export default function App() {
           </Suspense>
         </group>
 
-        {/* Enables zooming, panning, and orbiting the 3D scene */}
-        <OrbitControls enableZoom={true} />
+        <OrbitControls 
+          enableZoom={!activeModal} 
+          enablePan={!activeModal} 
+          enableRotate={!activeModal} 
+        />
       </Canvas>
     </div>
   )
 }
 
 // ==========================================
-// SECTION 5: REUSABLE STYLES
+// 4. REUSABLE STYLES
 // ==========================================
-
 const tag3DStyle = (color) => ({
   background: 'rgba(11, 12, 16, 0.92)',
   border: `1px solid ${color}`,

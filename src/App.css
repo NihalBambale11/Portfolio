@@ -4,13 +4,9 @@
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #0b0c10; /* Dark gaming/cyber slate */
+  background-color: #0b0c10;
 }
-
-body {
-  margin: 0;
-  padding: 0;
-}
+body { margin: 0; padding: 0; }
 
 /* 1. PROJECT CARD HOVER ANIMATION */
 .project-card {
@@ -57,7 +53,7 @@ body {
   background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
   background-size: 100% 4px;
   z-index: 100;
-  pointer-events: none; /* Lets you click right through it */
+  pointer-events: none;
   opacity: 0.4;
 }
 
@@ -78,4 +74,107 @@ body {
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateX(-4px);
   box-shadow: -4px 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================
+   6. RESPONSIVE / MOBILE DESIGN (FIXED LAYOUT)
+   ========================================== */
+
+/* Universal Box Sizing to prevent overflowing edges */
+.hud-left, .hud-right {
+  box-sizing: border-box !important;
+}
+
+/* Hide Mobile Nav by default on large Desktop screens */
+.mobile-nav-menu {
+  display: none;
+}
+
+/* TABLETS & SMALLER BROWSER WINDOWS */
+@media (max-width: 1024px) {
+  /* Safely bound the Left HUD to the screen edges */
+  .hud-left {
+    left: 15px !important;
+    right: 15px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  
+  /* Safely bound the Right Terminal to the bottom edges */
+  .hud-right {
+    top: auto !important;
+    bottom: 15px !important;
+    left: 15px !important;
+    right: 15px !important;
+    width: auto !important; 
+  }
+
+  /* HIDE THE 3D TAGS ON MOBILE SO THEY DONT OVERLAP */
+  .desktop-3d-tag {
+    display: none !important;
+  }
+
+  /* SHOW THE 2D BUTTON MENU IN THE TERMINAL */
+  .mobile-nav-menu {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+  }
+
+  .mobile-nav-btn {
+    flex: 1 1 30%;
+    text-align: center;
+    padding: 10px 5px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    background: rgba(11, 12, 16, 0.9);
+    transition: all 0.2s ease;
+  }
+  .mobile-nav-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+  /* Make Quick Links sit side-by-side */
+  .quick-links-group {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+  }
+
+  .quick-link {
+    flex: 1 1 30% !important;
+    text-align: center !important;
+    font-size: 0.65rem !important;
+    min-width: 120px !important;
+    margin: 2px !important;
+  }
+
+  .boot-text { display: none !important; }
+}
+
+/* SMARTPHONES (Stack everything completely vertically) */
+@media (max-width: 650px) {
+  .hud-left {
+    padding: 1rem !important;
+  }
+  .hud-left h1 { font-size: 1.4rem !important; }
+  .hud-left h2 { font-size: 0.75rem !important; }
+  .bio-text { font-size: 0.7rem !important; }
+
+  /* Stack buttons vertically on small phones */
+  .mobile-nav-btn { flex: 1 1 100% !important; }
+  .quick-link { flex: 1 1 100% !important; }
+
+  .modal-container {
+    width: 95% !important;
+    padding: 1.2rem !important;
+  }
+
+  .projects-grid, .skills-grid, .dossier-grid {
+    grid-template-columns: 1fr !important; 
+  }
 }
